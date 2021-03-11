@@ -48,10 +48,10 @@ import (
 	"github.com/elastic/beats/v7/libbeat/statestore"
 	"github.com/elastic/go-concert/unison"
 
-	_ "github.com/elastic/beats/v7/filebeat/include"
-
 	// Add filebeat level processors
 	_ "github.com/elastic/beats/v7/filebeat/processor/add_kubernetes_metadata"
+	_ "github.com/elastic/beats/v7/filebeat/processor/add_terminus_metadata"
+	_ "github.com/elastic/beats/v7/filebeat/processor/parser"
 	_ "github.com/elastic/beats/v7/libbeat/processors/decode_csv_fields"
 
 	// include all filebeat specific builders

@@ -15,20 +15,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package includes
+package multiline
 
 import (
-	// import queue types
-	_ "github.com/elastic/beats/v7/libbeat/outputs/codec/format"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/codec/json"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/console"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/elasticsearch"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/fileout"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/kafka"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/logstash"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/redis"
-	_ "github.com/elastic/beats/v7/libbeat/outputs/terminus"
-	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/diskqueue"
-	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/memqueue"
-	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/spool"
+	"fmt"
+	"time"
+
+	"github.com/elastic/beats/v7/libbeat/common/match"
 )
+
+// Config holds the options of multiline readers.
+type Config struct {
+	Negate       bool            `config:"negate"`
+	Match        string          `config:"match" validate:"required"`
+	MaxLines     *int            `config:"max_lines"`
+	Patterns     []match.Matcher `config:"patterns" validate:"required"`
+	Timeout      *time.Duration  `config:"timeout" validate:"positive"`
+	FlushPattern *match.Matcher  `config:"flush_pattern"`
+}
+
+// Validate validates the Config option for multiline reader.
+func (c *Config) Validate() error {
+	if c.Match != "after" && c.Match != "before" {
+		return fmt.Errorf("unknown matcher type: %s", c.Match)
+	}
+	return nil
+}
