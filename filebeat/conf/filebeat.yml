@@ -3,14 +3,14 @@ logging:
   level: ${LOG_LEVEL:info}
   to_stderr: true
 filebeat.registry:
-  path: ${REGISTRY_PATH:/data/spot/filebeat/data}/registry}
+  path: ${REGISTRY_FILE_PATH:/data/spot/filebeat/data/registry}
   # 老registry文件路径
-  migrate_file: ${MIGRATE_FILE:/data/spot/filebeat/log_tail/registry}
+  migrate_file: ${MIGRATE_FILE_PATH:/data/spot/filebeat/data/registry/log_tail/}
 filebeat.inputs:
   - type: container
     monitoring: false
     enabled: true
-    paths: "${INPUTS_CONTAINER_PATH:tests/containers/*/*.log}"
+    paths: "${INPUTS_CONTAINER_PATH:/var/lib/docker/containers/*/*.log}"
     stream: all
     encoding: utf-8
     ignore_older: 24h

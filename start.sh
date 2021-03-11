@@ -9,16 +9,17 @@ echo $OUTPUT_TERMINUS_HOSTS
 
 # migrate registry file
 version_num=$(cat ./VERSION)
-home_registry='/data/spot/filebeat/registry'
-dst_registry=$home_registry'/log_tail'
-meta_json_file=$home_registry'/filebeat/meta.json'
+home_registry='/data/spot/filebeat/data/registry'
+data_json_file=$home_registry'/log_tail/data.json'
+dst=$home_registry'/filebeat/'
 
 if [ "$version_num" == '4.0.0' ]; then
-	if [ -f "$meta_json_file" ]; then
-		echo "mv meta.json together with data.json"
-	  cp $meta_json_file $dst_registry
-	fi
+        if [ -f "$data_json_file" ]; then
+          echo "copy data.json to dir filebeat"
+          cp $data_json_file $dst
+        fi
 fi
+
 
 cfg_path='conf/filebeat.yml'
 if [ "$FILEBEAT_CONFIG_PATH" != '' ]; then
