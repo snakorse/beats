@@ -1,0 +1,107 @@
+# 日志
+logging:
+  # 等级
+  level: ${LOG_LEVEL:error}
+  # 输出stderr
+  to_stderr: true
+  # 打印指标
+  #metrics.enabled: true
+  # 打印指标间距
+  metrics.period: 60s
+# registry配置
+registry:
+  path: ${REGISTRY_FILE_PATH:/data/spot/filebeat/data/registry}
+  # 老registry文件路径
+  migrate_file: ${MIGRATE_FILE_PATH:/data/spot/filebeat/data/registry/log_tail/}
+# input配置
+inputs:
+  - type: log
+    enabled: true
+    paths: "${FILEBEAT_INPUT_LOG_PATH:./testdata/*.log}"
+    # 日志编码
+    encoding: utf-8
+    # ignore_older必须大于close_inactive
+    ignore_older: 24h
+    max_bytes: 51200
+    monitoring:
+      container_envs: ${FILEBEAT_MONITORING_CONTAINER_ENVS:"DICE_ORG_ID,DICE_ORG_NAME,DICE_PROJECT_ID,DICE_PROJECT_NAME,DICE_APPLICATION_ID,DICE_APPLICATION_NAME,DICE_RUNTIME_ID,DICE_RUNTIME_NAME,DICE_SERVICE_NAME,DICE_WORKSPACE,DICE_COMPONENT,DICE_CLUSTER_NAME"}
+      period: 30s
+    multiline.patterns:
+      - '(.*?)(\d{4}-\d{2}-\d{2}(\s|T)\d{2}:\d{2}:\d{2})(.*?)([Aa]lert|ALERT|[Tt]race|TRACE|[Dd]ebug|DEBUG|DEBU|[Nn]otice|NOTICE|[Ii]nfo|INFO|[Ww]arn(?:ing)?|WARN(?:ING)?|[Ee]rr(?:or)?|ERR(?:OR)?|[Cc]rit(?:ical)?|CRIT(?:ICAL)?|[Ff]atal|FATAL|[Ss]evere|SEVERE|[Ee]merg(?:ency)?|EMERG(?:ENCY)?)(.*?)'
+      - '(.*?)([Aa]lert|ALERT|[Tt]race|TRACE|[Dd]ebug|DEBUG|DEBU|[Nn]otice|NOTICE|[Ii]nfo|INFO|[Ww]arn(?:ing)?|WARN(?:ING)?|[Ee]rr(?:or)?|ERR(?:OR)?|[Cc]rit(?:ical)?|CRIT(?:ICAL)?|[Ff]atal|FATAL|[Ss]evere|SEVERE|[Ee]merg(?:ency)?|EMERG(?:ENCY)?)(.*?)(\d{4}-\d{2}-\d{2}(\s|T)\d{2}:\d{2}:\d{2})(.*?)'
+    multiline.negate: false
+    multiline.match: after
+    # 多行内容的最大行数，超过的将被舍弃
+    multiline.max_lines: ${INPUTS_CONTAINER_MULTILINE_MAX_LINES:500}
+    # 超过固定时间后，纵使没有未匹配行来创建新event，也会结束这个event
+    multiline.timeout: ${INPUTS_CONTAINER_MULTILINE_TIMEOUT:1s}
+    # 当文件没有内容被采集多久之后，关闭文件句柄
+    close_inactive: 10m
+    # 当文件重命名时，是否关闭文件句柄
+    #close_renamed: false
+    # 当文件被删除时，是否关闭文件句柄
+    close_removed: true
+    # 当文件被删除时，是否删除文件游标
+    clean_removed: true
+# 内存队列配置
+queue:
+  # 使用内存存储队列数据
+  mem:
+    # 队列中最大保存的event数
+    events: ${QUEUE_MEM_EVENTS:512}
+    # 队列中最小刷流的event数，当队列中的event数大于这个数值，则立即发送给publisher
+    flush.min_events: ${QUEUE_MEM_FLUSH_MIN_EVENTS:128}
+    # 队列超时刷流时间，当超过这个时间，则立即发送给publisher
+    flush.timeout: ${QUEUE_MEM_FLUSH_TIMEOUT:1s}
+processors:
+  # 提取链路追踪信息
+  - parse_message:
+  - terminus_add_fields:
+      ignore_empty: true
+      target: "terminus.tags"
+      fields:
+        TERMINUS_DEFINE_TAG: ${TERMINUS_DEFINE_TAG:}
+        MESOS_TASK_ID: ${MESOS_TASK_ID:}
+        DICE_ORG_ID: ${DICE_ORG_ID:}
+        DICE_ORG_NAME: ${DICE_ORG_NAME:}
+        DICE_PROJECT_ID: ${DICE_PROJECT_ID:}
+        DICE_PROJECT_NAME: ${DICE_PROJECT_NAME:}
+        DICE_APPLICATION_ID: ${DICE_APPLICATION_ID:}
+        DICE_APPLICATION_NAME: ${DICE_APPLICATION_NAME:}
+        DICE_RUNTIME_ID: ${DICE_RUNTIME_ID:}
+        DICE_RUNTIME_NAME: ${DICE_RUNTIME_NAME:}
+        DICE_SERVICE_NAME: ${DICE_SERVICE_NAME:}
+        DICE_WORKSPACE: ${DICE_WORKSPACE:}
+        DICE_COMPONENT: ${DICE_COMPONENT:}
+        DICE_CLUSTER_NAME: ${DICE_CLUSTER_NAME:}
+        # for log export
+        TERMINUS_LOG_KEY: ${TERMINUS_LOG_KEY:}
+        MONITOR_LOG_KEY: ${MONITOR_LOG_KEY:}
+        TERMINUS_KEY: ${TERMINUS_KEY:}
+        MONITOR_LOG_OUTPUT: ${MONITOR_LOG_OUTPUT:}
+        MONITOR_LOG_OUTPUT_CONFIG: ${MONITOR_LOG_OUTPUT_CONFIG:}
+  - terminus_add_fields:
+      ignore_empty: true
+      target: "terminus.labels"
+      fields:
+        MONITOR_LOG_OUTPUT: ${MONITOR_LOG_OUTPUT:}
+        MONITOR_LOG_OUTPUT_CONFIG: ${MONITOR_LOG_OUTPUT_CONFIG:}
+
+# publisher的output配置
+output.terminus_export:
+  hosts: ${MONITOR_LOG_COLLECTOR:http://10.98.245.145:7076/collect/logs/container}
+  #  hosts: ${MONITOR_LOG_COLLECTOR:http://localhost:7076/collect/logs/container}
+  params:
+    source: "container"
+  headers:
+  method: POST
+  ssl:
+  keep_alive: 30s
+  timeout: 60s
+  compress_level: 9
+  backoff:
+    init: 1s
+    max: 60s
+
+#output.console:
+#  pretty: true
