@@ -48,7 +48,7 @@ import (
 	"github.com/elastic/beats/v7/filebeat/channel"
 	"github.com/elastic/beats/v7/filebeat/harvester"
 	"github.com/elastic/beats/v7/filebeat/input/file"
-	"github.com/elastic/beats/v7/filebeat/reader/multiline"
+	cmultiline "github.com/elastic/beats/v7/filebeat/reader/multiline"
 	"github.com/elastic/beats/v7/libbeat/reader"
 	"github.com/elastic/beats/v7/libbeat/reader/debug"
 	"github.com/elastic/beats/v7/libbeat/reader/readfile"
@@ -692,7 +692,7 @@ func (h *Harvester) newLogFileReader() (reader.Reader, error) {
 	r = readfile.NewStripNewline(r, h.config.LineTerminator)
 
 	if h.config.Multiline != nil {
-		r, err = multiline.New(r, "\n", h.config.MaxBytes, h.config.Multiline)
+		r, err = cmultiline.New(r, "\n", h.config.MaxBytes, h.config.Multiline)
 		if err != nil {
 			return nil, err
 		}

@@ -51,13 +51,13 @@ processors:
       file_name: ${PARSE_KUBE_APISERVER_AUDIT_FILE_NAME:"kube-audit.log"}
       cluster_key: ${PARSE_KUBE_APISERVER_AUDIT_CLUSTER_KEY:"DICE_CLUSTER_NAME"}
 
-output.terminus:
+output.collector:
   hosts: ${OUTPUT_TERMINUS_HOSTS:http://collector.default.svc.cluster.local:7076}
   worker: 1
   job_path: ${OUTPUT_TERMINUS_JOB_PATH:/collect/logs/job}
   container_path: ${OUTPUT_TERMINUS_CONTAINER_PATH:/collect/logs/container}
-  auth_username: ${COLLECTOR_AUTH_USERNAME:collector}
-  auth_password: ${COLLECTOR_AUTH_PASSWORD:G$9767bP32drYFPWrK4XMLRMTatiM6cU}
+  auth_username: ${COLLECTOR_AUTH_USERNAME:}
+  auth_password: ${COLLECTOR_AUTH_PASSWORD:}
   params:
   headers:
   method: ${OUTPUT_TERMINUS_METHOD:POST}

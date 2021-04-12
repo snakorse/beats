@@ -1,4 +1,4 @@
-package terminus
+package collector
 
 import (
 	"time"

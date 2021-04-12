@@ -1,4 +1,4 @@
-package terminus
+package collector
 
 import (
 	"context"
@@ -387,5 +387,5 @@ func closeResponseBody(body io.ReadCloser) {
 }
 
 func (c *client) String() string {
-	return "terminus"
+	return selector
 }

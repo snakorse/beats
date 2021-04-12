@@ -1,4 +1,4 @@
-FROM golang:1.15.9 AS build
+FROM golang:1.15.11 AS build
 
 ENV GOPROXY="https://goproxy.cn"
 
@@ -26,4 +26,4 @@ COPY --from=build /opt/spot/filebeat /app/
 COPY --from=build /opt/spot/conf/* /app/conf/
 COPY --from=build /opt/spot/VERSION /app/
 
-CMD "./start.sh"
+CMD "./entrypoint.sh"

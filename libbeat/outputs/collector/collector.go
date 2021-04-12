@@ -1,4 +1,4 @@
-package terminus
+package collector
 
 import (
 	"github.com/elastic/beats/v7/libbeat/beat"
@@ -6,7 +6,7 @@ import (
 	"github.com/elastic/beats/v7/libbeat/outputs"
 )
 
-const selector = "terminus"
+const selector = "collector"
 
 func init() {
 	outputs.RegisterType( selector, makeClient)

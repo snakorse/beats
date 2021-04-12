@@ -1,4 +1,4 @@
-package terminus
+package collector
 
 import (
 	"bytes"
@@ -35,7 +35,7 @@ func (e *jsonEncoder) addHeader(header *http.Header) {
 }
 
 func (e *jsonEncoder) encode(obj []publisher.Event) (*bytes.Buffer, error) {
-	events := []map[string]interface{}{}
+	events := make([]map[string]interface{}, 0)
 	for _, o := range obj {
 		m, err := transformMap(o)
 		if err != nil {
