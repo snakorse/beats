@@ -1,17 +1,16 @@
 #!/bin/bash
 
-ROOTPATH=`pwd`
-BUILDPATH=$1
-export GOPATH=${BUILDPATH}
+set -o errexit -o nounset -o pipefail
 
-mkdir -p ${BUILDPATH}/src/github.com/elastic
-if [ -d ${BUILDPATH}/src/github.com/elastic/beats ]; then
-    rm -rf ${BUILDPATH}/src/github.com/elastic/beats
-fi
-if [ -L ${BUILDPATH}/src/github.com/elastic/beats ]; then
-    rm -f ${BUILDPATH}/src/github.com/elastic/beats
-fi
-ln -s ${ROOTPATH} ${BUILDPATH}/src/github.com/elastic/beats
+v="$(head -n 1 VERSION)"
+v="${v}-$(date '+%Y%m%d')-$(git rev-parse --short HEAD)"
 
-cd filebeat
-make
+image="registry.cn-hangzhou.aliyuncs.com/terminus/spot-filebeat:${v}"
+
+docker build -t "${image}" \
+    --label "branch=$(git rev-parse --abbrev-ref HEAD)" \
+    --label "commit=$(git rev-parse HEAD)" \
+    --label "build-time=$(date '+%Y-%m-%d %T%z')" \
+    -f "Dockerfile" .
+#docker login -u "${TERMINUS_DOCKERHUB_ALIYUN_USERNAME}" -p "${TERMINUS_DOCKERHUB_ALIYUN_PASSWORD}" registry.cn-hangzhou.aliyuncs.com
+#docker push "${image}"

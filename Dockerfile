@@ -1,29 +1,21 @@
 FROM golang:1.15.11 AS build
 
 ENV GOPROXY="https://goproxy.cn"
+ENV GO111MODULE="on"
 
-RUN mkdir -p /opt/spot/build
+COPY . /root/build
+WORKDIR /root/build
 
-COPY . /root/spot/build
-WORKDIR /root/spot/build
+RUN set -ex && echo "Asia/Shanghai" >/etc/timezone
 
-RUN set -ex && \
-    echo "Asia/Shanghai" >/etc/timezone && \
-	./build.sh /tmp/build && \
-	mv start.sh /opt/spot/ && \
-	mv filebeat/filebeat /opt/spot/ && \
-	mv filebeat/conf /opt/spot/conf && \
-	mv VERSION /opt/spot/
+RUN cd filebeat && make
 
 FROM registry.cn-hangzhou.aliyuncs.com/terminus/terminus-centos:base
 
-MAINTAINER terminus-spot-team
-
 WORKDIR /app
 
-COPY --from=build /opt/spot/start.sh /app/
-COPY --from=build /opt/spot/filebeat /app/
-COPY --from=build /opt/spot/conf/* /app/conf/
-COPY --from=build /opt/spot/VERSION /app/
+COPY --from=build /root/build/entrypoint.sh /app/
+COPY --from=build /root/build/filebeat/filebeat /app/
+COPY --from=build /root/build/filebeat/conf/* /app/conf/
 
 CMD "./entrypoint.sh"

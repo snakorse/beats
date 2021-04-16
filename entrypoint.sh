@@ -5,19 +5,17 @@ if [[ $DICE_IS_EDGE == 'true' ]]; then
 else
     export OUTPUT_TERMINUS_HOSTS=http://$COLLECTOR_ADDR
 fi
-echo $OUTPUT_TERMINUS_HOSTS
+echo "${OUTPUT_TERMINUS_HOSTS}"
 
-# migrate registry file
+# migrate old version registry file
 home_registry='/data/spot/filebeat/data/registry'
 data_json_file=$home_registry'/log_tail/data.json'
 dst=$home_registry'/filebeat/'
-
 if [ -f "$data_json_file" ]; then
 	echo "copy data.json to dir filebeat"
 	cp $data_json_file $dst
 	mv $data_json_file /tmp/
 fi
-
 
 cfg_path='conf/filebeat.yml'
 if [ "$FILEBEAT_CONFIG_PATH" != '' ]; then
