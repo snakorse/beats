@@ -12,5 +12,5 @@ docker build -t "${image}" \
     --label "commit=$(git rev-parse HEAD)" \
     --label "build-time=$(date '+%Y-%m-%d %T%z')" \
     -f "Dockerfile" .
-#docker login -u "${TERMINUS_DOCKERHUB_ALIYUN_USERNAME}" -p "${TERMINUS_DOCKERHUB_ALIYUN_PASSWORD}" registry.cn-hangzhou.aliyuncs.com
-#docker push "${image}"
+docker login -u "${TERMINUS_DOCKERHUB_ALIYUN_USERNAME}" -p "${TERMINUS_DOCKERHUB_ALIYUN_PASSWORD}" registry.cn-hangzhou.aliyuncs.com
+docker push "${image}"
