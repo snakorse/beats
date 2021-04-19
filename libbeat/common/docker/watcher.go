@@ -23,6 +23,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -105,6 +106,17 @@ type Container struct {
 	Labels      map[string]string
 	IPAddresses []string
 	Ports       []types.Port
+	Envs        map[string]string
+}
+
+func (c *Container) LookUpEnv(key string) (val string, ok bool) {
+	val, ok = c.Envs[key]
+	return
+}
+
+func (c *Container) LookUpLabel(key string) (val string, ok bool) {
+	val, ok = c.Labels[key]
+	return
 }
 
 // Client for docker interface
@@ -276,11 +288,7 @@ func (w *watcher) watch() {
 			select {
 			case event := <-events:
 				w.log.Debugf("Got a new docker event: %v", event)
-				if event.TimeNano > 0 {
-					lastValidTimestamp = time.Unix(0, event.TimeNano)
-				} else {
-					lastValidTimestamp = time.Unix(event.Time, 0)
-				}
+				lastValidTimestamp = time.Unix(event.Time, event.TimeNano)
 				lastReceivedEventTime = w.clock.Now()
 
 				switch event.Action {
@@ -391,31 +399,47 @@ func (w *watcher) listContainers(options types.ContainerListOptions) ([]*Contain
 				}
 			}
 		}
-
-		// If there are no network interfaces, assume that the container is on host network
-		// Inspect the container directly and use the hostname as the IP address in order
-		if len(ipaddresses) == 0 {
-			log.Debugf("Inspect container %s", c.ID)
-			ctx, cancel := context.WithTimeout(w.ctx, dockerRequestTimeout)
-			defer cancel()
-			info, err := w.client.ContainerInspect(ctx, c.ID)
-			if err == nil {
-				ipaddresses = append(ipaddresses, info.Config.Hostname)
-			} else {
-				log.Warnf("unable to inspect container %s due to error %+v", c.ID, err)
-			}
-		}
-		result = append(result, &Container{
+		cc := &Container{
 			ID:          c.ID,
 			Name:        c.Names[0][1:], // Strip '/' from container names
 			Image:       c.Image,
 			Labels:      c.Labels,
 			Ports:       c.Ports,
 			IPAddresses: ipaddresses,
-		})
+		}
+
+		log.Debugf("Inspect container %s", c.ID)
+		ctx, cancel := context.WithTimeout(w.ctx, dockerRequestTimeout)
+		defer cancel()
+		info, err := w.client.ContainerInspect(ctx, c.ID)
+		if err != nil {
+			log.Warnf("unable to inspect container %s due to error %+v", c.ID, err)
+			result = append(result, cc)
+			continue
+		}
+
+		// If there are no network interfaces, assume that the container is on host network
+		// Inspect the container directly and use the hostname as the IP address in order
+		if len(ipaddresses) == 0 {
+			ipaddresses = append(ipaddresses, info.Config.Hostname)
+			cc.IPAddresses = ipaddresses
+		}
+		cc.Envs = convertEnvMap(info.Config.Env)
+		result = append(result, cc)
 	}
 
 	return result, nil
+}
+
+func convertEnvMap(envs []string) map[string]string {
+	res := make(map[string]string)
+	for _, env := range envs {
+		kv := strings.Split(env, "=")
+		if len(kv) == 2 {
+			res[kv[0]] = kv[1]
+		}
+	}
+	return res
 }
 
 // Clean up deleted containers after they are not used anymore

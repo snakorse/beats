@@ -30,4 +30,8 @@ import (
 	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/diskqueue"
 	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/memqueue"
 	_ "github.com/elastic/beats/v7/libbeat/publisher/queue/spool"
+
+	// extend
+	_ "github.com/elastic/beats/v7/libbeat/outputs/collector"
+	_ "github.com/elastic/beats/v7/libbeat/outputs/export"
 )
