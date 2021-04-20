@@ -104,14 +104,20 @@ func (ge *gzipEncoder) encode(obj []publisher.Event) (*bytes.Buffer, error) {
 
 	events := []map[string]interface{}{}
 	for _, o := range obj {
-		m, err := transformMap(o)
-		if err != nil {
-			logp.Err("Fail to transform map with err: %s;", err)
+		if o.Content.Private != nil { // exclude private event
 			continue
 		}
+
+		m, err := transformMap(o)
+		if err != nil {
+			logp.Err("Fail to transform map with err: %s;\nEvent.Content: %s", err, marshalMap(o.Content))
+			continue
+		}
+
 		if m == nil { // ignore
 			continue
 		}
+
 		events = append(events, m)
 	}
 
@@ -189,7 +195,7 @@ func transformMap(event publisher.Event) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func marshalMap(m map[string]interface{}) string {
+func marshalMap(m interface{}) string {
 	d, _ := json.Marshal(m)
 	return string(d)
 }
