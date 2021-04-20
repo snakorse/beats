@@ -1,0 +1,31 @@
+version: "2.0"
+meta: {}
+envs: {}
+services:
+  filebeat:
+    envs:
+      COLLECTOR_AUTH_USERNAME: collector
+      COLLECTOR_AUTH_PASSWORD: G$9767bP32drYFPWrK4XMLRMTatiM6cU
+      DOCKER_SOCK_PATH: unix:///rootfs/var/run/docker.sock
+    resources:
+      cpu: 0.02
+      max_cpu: 0.2
+      mem: 128
+      max_mem: 512
+      network:
+        mode: container
+    binds:
+    - <%$.Docker.DataRoot%>/containers:/var/lib/docker/containers:ro
+    - <%$.Platform.DataRoot%>/kube-apiserver/audit-logs:/data/kube-apiserver/audit-logs:ro
+    - <%$.Platform.DataRoot%>/spot-v2/filebeat:/data/spot/filebeat:rw
+    - /var/run:/rootfs/var/run:ro
+    deployments:
+      replicas: 1
+      labels:
+        GROUP: spot-v2
+    health_check:
+      http: {}
+      exec:
+        cmd: ps aux | grep filebeat || exit 1
+        duration: 120
+addons: {}
