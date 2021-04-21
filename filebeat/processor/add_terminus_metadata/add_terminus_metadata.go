@@ -171,12 +171,19 @@ func (d *addDockerMetadata) Run(event *beat.Event) (*beat.Event, error) {
 		return event, nil
 	}
 
+	// default
+	event.Fields.DeepUpdate(common.MapStr{
+		"terminus": common.MapStr{
+			"id":     cid,
+			"source": "container",
+		},
+	})
+
 	container := d.watcher.Container(cid)
 	if container == nil {
 		d.log.Debugf("Container not found: cid=%s", cid)
 		return event, nil
 	}
-
 
 	var jobID, outputCollector string
 	tags := make(map[string]interface{})
