@@ -104,10 +104,6 @@ func (ge *gzipEncoder) encode(obj []publisher.Event) (*bytes.Buffer, error) {
 
 	events := []map[string]interface{}{}
 	for _, o := range obj {
-		if o.Content.Private != nil { // exclude private event
-			continue
-		}
-
 		m, err := transformMap(o)
 		if err != nil {
 			logp.Err("Fail to transform map with err: %s;\nEvent.Content: %s", err, marshalMap(o.Content))
