@@ -14,6 +14,8 @@ FROM registry.cn-hangzhou.aliyuncs.com/terminus/terminus-centos:base
 
 WORKDIR /app
 
+ENV GODEBUG="madvdontneed=1"
+
 COPY --from=build /root/build/entrypoint.sh /app/
 COPY --from=build /root/build/filebeat/filebeat /app/
 COPY --from=build /root/build/filebeat/conf/* /app/conf/
