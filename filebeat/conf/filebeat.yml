@@ -24,7 +24,8 @@ filebeat.inputs:
     multiline.max_lines: ${INPUT_MULTILINE_MAX_LINES:500}
     multiline.timeout: 1s
     close_inactive: ${INPUT_CLOSE_INACTIVE:5m}
-    close_removed: ${INPUT_CLOSE_REMOVE:false}
+    # default false, avoid log-lose when filebeat consume can't catch up log produce
+    close_removed: ${INPUT_CLOSE_REMOVED:false}
     close_timeout: ${INPUT_CLOSE_TIMEOUT:30m}
 queue:
   mem:
