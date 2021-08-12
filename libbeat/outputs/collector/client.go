@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -16,11 +17,14 @@ import (
 	"github.com/elastic/beats/v7/libbeat/publisher"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
+	"golang.org/x/time/rate"
 )
 
 type client struct {
 	enc encoder
-	lmtr *limiter
+
+	lmtr         *rate.Limiter
+	bodyMaxBytes int
 
 	client       *http.Client
 	jobReq       *http.Request
@@ -84,11 +88,12 @@ func newClient(host string, cfg config, observer outputs.Observer) (*client, err
 		return nil, errors.Wrap(err, "fail to create output client")
 	}
 
-	lmtr := newLimiter(cfg.Limiter.Quantity, cfg.Limiter.Threshold, cfg.Limiter.Timeout)
+	lmtr := rate.NewLimiter(rate.Limit(cfg.BodyBytesPerSecond), cfg.BodyMaxBytes)
 
 	return &client{
 		enc:                 enc,
 		lmtr:                lmtr,
+		bodyMaxBytes:        cfg.BodyMaxBytes,
 		client:              httpClient,
 		jobReq:              jobReq,
 		containerReq:        containerReq,
@@ -203,10 +208,7 @@ func (c *client) publishEvents(events []publisher.Event) ([]publisher.Event, err
 }
 
 func (c *client) sendEvents(events []publisher.Event, isJob bool) ([]publisher.Event, error) {
-	send, rest, err := c.pickSendEvents(events)
-	if err != nil {
-		return events, errors.Wrap(err, "fail to pick send events")
-	}
+	send := events
 	if len(send) == 0 {
 		return events, nil
 	}
@@ -229,6 +231,15 @@ func (c *client) sendEvents(events []publisher.Event, isJob bool) ([]publisher.E
 	req.Header.Set("terminus-request-id", requestID)
 	req.Body = ioutil.NopCloser(body)
 
+	// block until ok
+	r := c.lmtr.ReserveN(time.Now(), body.Len())
+	if !r.OK() {
+		newBurst := c.lmtr.Burst() << 1
+		c.lmtr.SetBurst(newBurst)
+		return send, errors.New(fmt.Sprintf("double of burst to %d", newBurst))
+	}
+	time.Sleep(r.Delay())
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return events, errors.Errorf("fail to send request %s: %s", requestID, err)
@@ -242,7 +253,7 @@ func (c *client) sendEvents(events []publisher.Event, isJob bool) ([]publisher.E
 	go func() {
 		c.sendOutputEvents(send)
 	}()
-	return rest, nil
+	return nil, nil
 }
 
 func (c *client) sendOutputEvents(events []publisher.Event) {
@@ -315,26 +326,6 @@ func (c *client) sendOutputAddrEvents(addr string, events []publisher.Event) {
 		addr, requestID, len(events), float64(time.Now().UnixNano()-now)/float64(time.Second))
 }
 
-func (c *client) pickSendEvents(events []publisher.Event) (send, rest []publisher.Event, errs error) {
-	// 先尝试发送全部events
-	body, err := c.enc.encode(events)
-	if err != nil {
-		rest, errs = events, errors.Wrap(err, "fail to encode events")
-		return
-	}
-	if c.lmtr.assign(int64(body.Len())) {
-		send = events
-		return
-	}
-
-	// 后尝试减少发送的events数
-	send, rest, err = c.balanceEvents(events, rest)
-	if err != nil {
-		errs = errors.Wrap(err, "fail to balance events")
-	}
-	return
-}
-
 func (c *client) splitEvents(events []publisher.Event) (jobs, containers []publisher.Event, err error) {
 	for _, e := range events {
 		source, err := e.Content.GetValue("terminus.source")
@@ -343,39 +334,6 @@ func (c *client) splitEvents(events []publisher.Event) (jobs, containers []publi
 		} else {
 			jobs = append(jobs, e)
 		}
-	}
-	return
-}
-
-func (c *client) balanceEvents(send, rest []publisher.Event) (newSend, newRest []publisher.Event, errs error) {
-	if len(send) <= 1 {
-		newRest = append(newRest, send...)
-		newRest = append(newRest, rest...)
-		return
-	}
-
-	half := len(send) / 2
-	for i, e := range send {
-		if i < half {
-			newSend = append(newSend, e)
-		} else {
-			newRest = append(newRest, e)
-		}
-	}
-	newRest = append(newRest, rest...)
-
-	body, err := c.enc.encode(newSend)
-	if err != nil {
-		errs = errors.Wrap(err, "fail to encode new send events")
-		return
-	}
-	if c.lmtr.assign(int64(body.Len())) {
-		return
-	}
-
-	newSend, newRest, err = c.balanceEvents(newSend, newRest)
-	if err != nil {
-		errs = errors.Wrap(err, "fail to balance events")
 	}
 	return
 }

@@ -77,7 +77,8 @@ output.collector:
     max: "60s"
   load_balance: true
   compress_level: 9
-  limiter:
-    threshold: ${OUTPUT_TERMINUS_LIMITER_THRESHOLD:1048576}
-    quantity: ${OUTPUT_TERMINUS_LIMITER_QUANTITY:10240}
-    timeout: ${OUTPUT_TERMINUS_TIMEOUT:50ms}
+  # 3 MB/s
+  body_bytes_per_second: ${OUTPUT_BODY_BYTES_PER_SECOND:3145728}
+  # body_max_bytes = bulk_max_size * inputs.max_bytes / compress_ratio
+  # x = 200*50KB/5 ~= 3MB, so make this to burst as 5 MB
+  body_max_bytes: ${OUTPUT_BODY_MAX_BYTES:5242880}
