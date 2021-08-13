@@ -39,7 +39,8 @@ func (e *jsonEncoder) encode(obj []publisher.Event) (*bytes.Buffer, error) {
 	for _, o := range obj {
 		m, err := transformMap(o)
 		if err != nil {
-			logp.Err("Fail to transform map with err: %s", err)
+			val, _ := o.Content.Fields.GetValue("log.file.path")
+			logp.Err("Fail to transform map with err: %s; path: %s", err, val)
 			continue
 		}
 		if m == nil { // ignore
@@ -106,7 +107,8 @@ func (ge *gzipEncoder) encode(obj []publisher.Event) (*bytes.Buffer, error) {
 	for _, o := range obj {
 		m, err := transformMap(o)
 		if err != nil {
-			logp.Err("Fail to transform map with err: %s;\nEvent.Content: %s", err, marshalMap(o.Content))
+			val, _ := o.Content.Fields.GetValue("log.file.path")
+			logp.Err("Fail to transform map with err: %s; path: %s", err, val)
 			continue
 		}
 
@@ -187,13 +189,7 @@ func transformMap(event publisher.Event) (map[string]interface{}, error) {
 	m["content"] = message
 	m["tags"] = tags
 	m["labels"] = labels
-	logp.Debug(selector, "transformMap get final message: %+v", marshalMap(m))
 	return m, nil
-}
-
-func marshalMap(m interface{}) string {
-	d, _ := json.Marshal(m)
-	return string(d)
 }
 
 func convert(data interface{}) (map[string]string, error) {
