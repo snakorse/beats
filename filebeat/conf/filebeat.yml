@@ -45,8 +45,8 @@ processors:
       enable_log_output: ${ENABLE_LOG_OUTPUT:true}
   - parse_message:
       fields: ["input.type.container"]
-  - parse_kafka_connector:
-      fields: ["input.type.kafka"]
+#  - parse_kafka_connector:
+#      fields: ["input.type.kafka"]
   - parse_kube_apiserver_audit:
       fields: ["input.type.kube_audit"]
       file_name: ${PARSE_KUBE_APISERVER_AUDIT_FILE_NAME:"kube-audit.log"}
@@ -70,14 +70,14 @@ output.collector:
     method: "POST"
     keep_alive: "30s"
     timeout: "60s"
-    compress_level: 9
+    compress_level: 3
   bulk_max_size: 1024
   max_retries: -1
   backoff:
     init: "1s"
     max: "60s"
   load_balance: true
-  compress_level: 9
+  compress_level: ${OUTPUT_COMPRESS_LEVEL:3}
   # 3 MB/s
   body_bytes_per_second: ${OUTPUT_BODY_BYTES_PER_SECOND:3145728}
   # body_max_bytes = bulk_max_size * inputs.max_bytes / compress_ratio

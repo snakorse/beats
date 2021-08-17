@@ -78,7 +78,6 @@ func newClient(host string, cfg config, observer outputs.Observer) (*client, err
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create http client")
 	}
-
 	outputTLS, err := tlscommon.LoadTLSConfig(cfg.Output.TLS)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to load output tls")

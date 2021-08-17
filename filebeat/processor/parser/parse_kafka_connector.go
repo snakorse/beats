@@ -35,17 +35,15 @@ func newParseKafkaConnector(c *common.Config) (processors.Processor, error) {
 
 // [2020-06-11 09:09:29,846] ERROR WorkerConnector{id=mysql_source_zhengzhi_test} Connector raised an error (org.apache.kafka.connect.runtime.WorkerConnector:91)
 func (p *parseKafkaConnector) Run(event *beat.Event) (*beat.Event, error) {
-	logp.Debug("parse_kafka_connector", "start parse kafka connector message")
+	// not kafka-connection container
+	name, err := event.GetValue("docker.container.name")
+	if err != nil || strings.Index(name.(string), kafkaConnectionNameMust) == -1 {
+		return event, nil
+	}
 
 	message, err := event.GetValue("message")
 	if err != nil {
 		return event, errors.Wrap(err, "fail to get message value")
-	}
-
-	// not kafka-connection container
-	if name, err := event.GetValue("docker.container.name"); name != "" && err == nil &&
-		!strings.Contains(name.(string), kafkaConnectionNameMust) {
-		return event, nil
 	}
 
 	logp.Debug("parse_kafka_connector", "parse kafka connector message: %s", message)

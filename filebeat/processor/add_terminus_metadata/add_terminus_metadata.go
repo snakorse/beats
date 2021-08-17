@@ -198,7 +198,6 @@ func (d *addDockerMetadata) Run(event *beat.Event) (*beat.Event, error) {
 	if v, ok := container.LookUpLabel(d.jobIDKey); ok {
 		jobID = v
 	}
-
 	if d.enableLogOutput {
 		// 检查并设置导出地址
 		if v, ok := container.LookUpEnv(d.outputCollectorKey); ok {

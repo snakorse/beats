@@ -25,7 +25,17 @@ type config struct {
 	Limiter            limiterConfig     `config:"limiter"`
 	BodyBytesPerSecond int               `config:"body_bytes_per_second"`
 	BodyMaxBytes       int               `config:"body_max_bytes"`
-	Output             outputConfig      `config:"output"`
+	Output outputConfig `config:"output"`
+}
+
+type outputConfig struct {
+	Params        map[string]string `config:"params"`
+	Headers       map[string]string `config:"headers"`
+	Method        string            `config:"method"`
+	TLS           *tlscommon.Config `config:"ssl"`
+	KeepAlive     time.Duration     `config:"keep_alive"`
+	Timeout       time.Duration     `config:"timeout"`
+	CompressLevel int               `config:"compress_level" validate:"min=0, max=9"`
 }
 
 type backoff struct {
@@ -37,16 +47,6 @@ type limiterConfig struct {
 	Quantity  int64         `config:"quantity"`
 	Threshold int64         `config:"threshold"`
 	Timeout   time.Duration `config:"timeout"`
-}
-
-type outputConfig struct {
-	Params        map[string]string `config:"params"`
-	Headers       map[string]string `config:"headers"`
-	Method        string            `config:"method"`
-	TLS           *tlscommon.Config `config:"ssl"`
-	KeepAlive     time.Duration     `config:"keep_alive"`
-	Timeout       time.Duration     `config:"timeout"`
-	CompressLevel int               `config:"compress_level" validate:"min=0, max=9"`
 }
 
 var defaultConfig = config{

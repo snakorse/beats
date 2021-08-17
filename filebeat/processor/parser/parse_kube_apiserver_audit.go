@@ -55,7 +55,7 @@ func (p *parseKubeApiserverAudit) Run(event *beat.Event) (*beat.Event, error) {
 	if !ok {
 		return event, errors.Wrap(err, "source field is not string")
 	}
-	if strings.Contains(source, p.fileName) {
+	if strings.Index(source, p.fileName) != -1 {
 		event.Fields.Put("terminus.source", "kube-apiserver-audit")
 		event.Fields.Put("terminus.id", p.cluster)
 	}

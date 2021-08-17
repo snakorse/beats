@@ -63,12 +63,8 @@ func extractTags(raw string) (tagstr string, tags map[string]interface{}) {
 	return
 }
 
-// https://yuque.antfin.com/spot/develop-docs/gkfxgl
+// https://yuque.antfin.com/dice/zs3zid/gkfxgl
 func (p *parseMessage) parseV2(message string) (string, map[string]interface{}) {
-	if !p.regex.Match(stringToBytes(message)) {
-		return message, map[string]interface{}{}
-	}
-
 	groupNames := p.regex.SubexpNames()
 	level, tagstr := "", ""
 	for _, matches := range p.regex.FindAllStringSubmatch(message, -1) {
@@ -83,7 +79,9 @@ func (p *parseMessage) parseV2(message string) (string, map[string]interface{}) 
 	}
 
 	newTagstr, tags := extractTags(tagstr)
-	tags["level"] = level
+	if level != "" {
+		tags["level"] = level
+	}
 	return strings.ReplaceAll(message, tagstr, newTagstr), tags
 }
 
