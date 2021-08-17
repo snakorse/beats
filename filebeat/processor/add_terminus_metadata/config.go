@@ -28,11 +28,12 @@ type Config struct {
 	LabelKeys               string `config:"label_keys"`
 	AllLogAnalyse           bool   `config:"all_log_analyse"`
 	MonitorLogCollectorAddr string `config:"monitor_log_collector_addr"`
+	EnableLogOutput         bool   `config:"enable_log_output"`
 }
 
 func defaultConfig() Config {
 	return Config{
-		Host: "unix:///var/run/docker.sock",
+		Host:        "unix:///var/run/docker.sock",
 		MatchSource: true,
 		SourceIndex: 4, // Use 4 to match the CID in /var/lib/docker/containers/<container_id>/*.log.
 		MatchPIDs:   []string{"process.pid", "process.ppid"},
@@ -43,5 +44,6 @@ func defaultConfig() Config {
 		OutputCollectorKey: "MONITOR_LOG_COLLECTOR",
 		TagKeys:            "MESOS_TASK_ID,TERMINUS_DEFINE_TAG",
 		LabelKeys:          "MONITOR_LOG_OUTPUT,MONITOR_LOG_OUTPUT_CONFIG",
+		EnableLogOutput:    true,
 	}
 }
