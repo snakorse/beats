@@ -38,6 +38,7 @@ type addDockerMetadata struct {
 	sourceProcessor         processors.Processor
 	allLogAnalyse           bool
 	monitorLogCollectorAddr string
+	enableLogOutput         bool
 
 	pidFields       []string      // Field names that contain PIDs.
 	cgroups         *common.Cache // Cache of PID (int) to cgropus (map[string]string).
@@ -106,6 +107,7 @@ func buildDockerMetadataProcessor(log *logp.Logger, cfg *common.Config, watcherC
 		defaultTags:             strings.Split(config.DefaultTags, ","),
 		tagKeyRel:               strings.Split(config.TagKeys, ","),
 		labelKeyRel:             strings.Split(config.LabelKeys, ","),
+		enableLogOutput:         config.EnableLogOutput,
 	}, nil
 }
 
@@ -196,15 +198,18 @@ func (d *addDockerMetadata) Run(event *beat.Event) (*beat.Event, error) {
 	if v, ok := container.LookUpLabel(d.jobIDKey); ok {
 		jobID = v
 	}
-	// 检查并设置导出地址
-	if v, ok := container.LookUpEnv(d.outputCollectorKey); ok {
-		outputCollector = v
-	}
-	if v, ok := container.LookUpLabel(d.outputCollectorKey); ok {
-		outputCollector = v
-	}
-	if d.allLogAnalyse {
-		outputCollector = d.monitorLogCollectorAddr
+
+	if d.enableLogOutput {
+		// 检查并设置导出地址
+		if v, ok := container.LookUpEnv(d.outputCollectorKey); ok {
+			outputCollector = v
+		}
+		if v, ok := container.LookUpLabel(d.outputCollectorKey); ok {
+			outputCollector = v
+		}
+		if d.allLogAnalyse {
+			outputCollector = d.monitorLogCollectorAddr
+		}
 	}
 
 	// update tag from containers labels and envs
